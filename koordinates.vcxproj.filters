@@ -26,9 +26,6 @@
     <ClInclude Include="MainForm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Point.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ChartDisplayForm.h">
       <Filter>Header Files</Filter>
     </ClInclude>

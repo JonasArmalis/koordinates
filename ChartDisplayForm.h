@@ -1,7 +1,6 @@
-#pragma once
+﻿#pragma once
 
 #include <vector>
-
 
 namespace koordinates {
 
@@ -21,17 +20,20 @@ namespace koordinates {
 	{
 	private:
 		List<System::Drawing::Point>^ points;
+		System::Windows::Forms::Button^ button1;
 		System::Windows::Forms::Panel^ panel1;
+		bool isBarChart;
+
+		System::ComponentModel::Container^ components;
 
 	public:
 		ChartDisplayForm(List<System::Drawing::Point>^ points)
 		{
 			InitializeComponent();
 			this->points = points;
-			this->DoubleBuffered = true; // Helps prevent flickering
+			this->DoubleBuffered = true;
+			this->isBarChart = false;
 
-			// Force a repaint
-			//this->panel1->Invalidate();
 		}
 
 	protected:
@@ -46,12 +48,6 @@ namespace koordinates {
 			}
 		}
 
-	private:
-		/// <summary>
-		/// Required designer variable.
-		/// </summary>
-		System::ComponentModel::Container ^components;
-
 #pragma region Windows Form Designer generated code
 		/// <summary>
 		/// Required method for Designer support - do not modify
@@ -60,6 +56,7 @@ namespace koordinates {
 		void InitializeComponent(void)
 		{
 			this->panel1 = (gcnew System::Windows::Forms::Panel());
+			this->button1 = (gcnew System::Windows::Forms::Button());
 			this->SuspendLayout();
 			// 
 			// panel1
@@ -74,14 +71,25 @@ namespace koordinates {
 			this->panel1->TabIndex = 0;
 			this->panel1->Paint += gcnew System::Windows::Forms::PaintEventHandler(this, &ChartDisplayForm::panel1_Paint);
 			// 
+			// button1
+			// 
+			this->button1->Location = System::Drawing::Point(1437, 62);
+			this->button1->Name = L"button1";
+			this->button1->Size = System::Drawing::Size(118, 46);
+			this->button1->TabIndex = 1;
+			this->button1->Text = L"Pakeisti į stulpelinį";
+			this->button1->UseVisualStyleBackColor = true;
+			this->button1->Click += gcnew System::EventHandler(this, &ChartDisplayForm::button1_Click);
+			// 
 			// ChartDisplayForm
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->ClientSize = System::Drawing::Size(1584, 761);
+			this->Controls->Add(this->button1);
 			this->Controls->Add(this->panel1);
 			this->Name = L"ChartDisplayForm";
-			this->Text = L"ChartDisplayForm";
+			this->Text = L"Koordinačių plokštuma";
 			this->ResumeLayout(false);
 			this->PerformLayout();
 
@@ -89,8 +97,17 @@ namespace koordinates {
 #pragma endregion
 
 	private:
-		System::Void panel1_Paint(System::Object^ sender, System::Windows::Forms::PaintEventArgs^ e) {
+		System::Void panel1_Paint(System::Object^ sender, System::Windows::Forms::PaintEventArgs^ e)
+		{
 			Graphics^ g = e->Graphics;
+			Pen^ axisPen = gcnew Pen(Color::Black, 2);
+			Pen^ linePen = gcnew Pen(Color::Red, 1);
+			Pen^ barPen = gcnew Pen(Color::Red, 10);
+			SolidBrush^ labelBrush = gcnew SolidBrush(Color::Black);
+			SolidBrush^ pointBrush = gcnew SolidBrush(Color::Red);
+
+			int barWidth = 10;
+			int padding = 20;
 
 			int panelWidth = panel1->ClientSize.Width;
 			int panelHeight = panel1->ClientSize.Height;
@@ -107,7 +124,6 @@ namespace koordinates {
 				if (point.Y > maxY) maxY = point.Y;
 			}
 
-			int padding = 10;
 			minX -= padding;
 			maxX += padding;
 			minY -= padding;
@@ -116,8 +132,6 @@ namespace koordinates {
 			double scaleX = (double)panelWidth / (maxX - minX);
 			double scaleY = (double)panelHeight / (maxY - minY);
 
-			Pen^ axisPen = gcnew Pen(Color::Black, 2);
-			SolidBrush^ labelBrush = gcnew SolidBrush(Color::Black);
 			System::Drawing::Font^ labelFont = gcnew System::Drawing::Font("Arial", 8);
 
 			// Y-axis
@@ -128,18 +142,42 @@ namespace koordinates {
 			int xAxisY = (int)(panelHeight - (-minY * scaleY));
 			g->DrawLine(axisPen, 0, xAxisY, panelWidth, xAxisY);
 
-			// Draw points
-			SolidBrush^ pointBrush = gcnew SolidBrush(Color::Red);
-			for each (Point point in points) {
-				int mappedX = (int)((point.X - minX) * scaleX);
-				int mappedY = (int)(panelHeight - (point.Y - minY) * scaleY);
+			if (isBarChart) {
+				for each (Point point in points) {
+					int mappedX = (int)((point.X - minX) * scaleX);
+					int mappedY = (int)(panelHeight - (point.Y - minY) * scaleY);
 
-				g->FillEllipse(pointBrush, mappedX - 3, mappedY - 3, 6, 6);
+					// Ensure bar height is calculated correctly
+					int barHeight = xAxisY - mappedY;  // Height from the point to the x-axis
+
+					// Fill rectangle representing the bar
+					g->DrawLine(barPen, mappedX, xAxisY, mappedX, mappedY);
+				}
+			}
+			else {
+				// Line chart: connect points with lines
+				Point prevMappedPoint;
+				bool firstPoint = true;
+
+				for each (Point point in points) {
+					int mappedX = (int)((point.X - minX) * scaleX);
+					int mappedY = (int)(panelHeight - (point.Y - minY) * scaleY);
+
+					// Draw the point as a filled ellipse
+					g->FillEllipse(pointBrush, mappedX - 3, mappedY - 3, 6, 6);
+
+					// Connect the points with lines
+					if (!firstPoint) {
+						g->DrawLine(linePen, prevMappedPoint.X, prevMappedPoint.Y, mappedX, mappedY);
+					}
+					prevMappedPoint = Point(mappedX, mappedY);
+					firstPoint = false;
+				}
 			}
 
 			// Add axis labels at intervals
-			int xInterval = (maxX - minX) / 10;
-			int yInterval = (maxY - minY) / 10;
+			int xInterval = (maxX - minX) / 15;
+			int yInterval = (maxY - minY) / 15;
 
 			for (int x = minX + padding; x <= maxX - padding; x += xInterval) {
 				int mappedX = (int)((x - minX) * scaleX);
@@ -152,7 +190,19 @@ namespace koordinates {
 				g->DrawLine(axisPen, yAxisX - 5, mappedY, yAxisX + 5, mappedY);
 				g->DrawString(y.ToString(), labelFont, labelBrush, yAxisX - 30, mappedY - 6);
 			}
+
+		
 		}
+
+			private: System::Void button1_Click(System::Object^ sender, System::EventArgs^ e) {
+
+				isBarChart = !isBarChart;
+				if (isBarChart) this->button1->Text = L"Pakeisti į linijinį";
+				else this->button1->Text = L"Pakeisti į stulpelinį";
+
+				this->panel1->Invalidate();
+			}	
+
 
 	};
 }
