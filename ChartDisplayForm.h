@@ -20,9 +20,12 @@ namespace koordinates {
 	{
 	private:
 		List<System::Drawing::Point>^ points;
+		Color chartColor = Color::Red;
+		bool isBarChart;
 		System::Windows::Forms::Button^ button1;
 		System::Windows::Forms::Panel^ panel1;
-		bool isBarChart;
+		System::Windows::Forms::ColorDialog^ colorDialog1;
+		System::Windows::Forms::Button^ colorButton;
 
 		System::ComponentModel::Container^ components;
 
@@ -57,6 +60,8 @@ namespace koordinates {
 		{
 			this->panel1 = (gcnew System::Windows::Forms::Panel());
 			this->button1 = (gcnew System::Windows::Forms::Button());
+			this->colorDialog1 = (gcnew System::Windows::Forms::ColorDialog());
+			this->colorButton = (gcnew System::Windows::Forms::Button());
 			this->SuspendLayout();
 			// 
 			// panel1
@@ -81,11 +86,22 @@ namespace koordinates {
 			this->button1->UseVisualStyleBackColor = true;
 			this->button1->Click += gcnew System::EventHandler(this, &ChartDisplayForm::button1_Click);
 			// 
+			// colorButton
+			// 
+			this->colorButton->Location = System::Drawing::Point(1440, 142);
+			this->colorButton->Name = L"colorButton";
+			this->colorButton->Size = System::Drawing::Size(114, 42);
+			this->colorButton->TabIndex = 2;
+			this->colorButton->Text = L"Pasirinkti spalvą";
+			this->colorButton->UseVisualStyleBackColor = true;
+			this->colorButton->Click += gcnew System::EventHandler(this, &ChartDisplayForm::colorButton_Click);
+			// 
 			// ChartDisplayForm
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->ClientSize = System::Drawing::Size(1584, 761);
+			this->Controls->Add(this->colorButton);
 			this->Controls->Add(this->button1);
 			this->Controls->Add(this->panel1);
 			this->Name = L"ChartDisplayForm";
@@ -101,10 +117,10 @@ namespace koordinates {
 		{
 			Graphics^ g = e->Graphics;
 			Pen^ axisPen = gcnew Pen(Color::Black, 2);
-			Pen^ linePen = gcnew Pen(Color::Red, 1);
-			Pen^ barPen = gcnew Pen(Color::Red, 10);
+			Pen^ linePen = gcnew Pen(chartColor, 1);
+			Pen^ barPen = gcnew Pen(chartColor, 10);
 			SolidBrush^ labelBrush = gcnew SolidBrush(Color::Black);
-			SolidBrush^ pointBrush = gcnew SolidBrush(Color::Red);
+			SolidBrush^ pointBrush = gcnew SolidBrush(chartColor);
 
 			int barWidth = 10;
 			int padding = 20;
@@ -204,5 +220,11 @@ namespace koordinates {
 			}	
 
 
-	};
+	private: System::Void colorButton_Click(System::Object^ sender, System::EventArgs^ e) {
+		if (colorDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK) {
+			chartColor = colorDialog1->Color;
+			panel1->Invalidate();
+		}
+	}
+};
 }
